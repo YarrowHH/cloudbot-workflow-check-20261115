@@ -49,14 +49,14 @@ def summarize(items):
             "items must be a plain list, got %s" % type(items).__name__
         )
 
-    # Work on a shallow snapshot so iteration is stable and the caller's
-    # list is never touched.
-    snapshot = list(items)
-
+    # Iterate the caller's list directly (no snapshot or copy) so auxiliary
+    # memory stays O(1). The exact-list guard above ensures built-in list
+    # iteration, and the caller does not mutate the list during the call.
+    # The list is only read, never modified.
     passed = 0
     failed = 0
     pending = 0
-    for index, item in enumerate(snapshot):
+    for index, item in enumerate(items):
         if not _is_valid_state(item):
             raise ValueError(
                 "invalid status at index %d: expected one of %s, got %s"
@@ -70,7 +70,7 @@ def summarize(items):
             pending += 1
 
     return {
-        "total": len(snapshot),
+        "total": passed + failed + pending,
         "passed": passed,
         "failed": failed,
         "pending": pending,
